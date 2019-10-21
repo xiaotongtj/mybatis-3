@@ -1,28 +1,19 @@
 /**
- *    Copyright 2009-2019 the original author or authors.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Copyright 2009-2019 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.ibatis.session.defaults;
-
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.ibatis.binding.BindingException;
 import org.apache.ibatis.cursor.Cursor;
@@ -38,6 +29,11 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * The default implementation for {@link SqlSession}.
@@ -95,9 +91,13 @@ public class DefaultSqlSession implements SqlSession {
 
   @Override
   public <K, V> Map<K, V> selectMap(String statement, Object parameter, String mapKey, RowBounds rowBounds) {
+    // step 1: 先利用selectList获取查询到的值
     final List<? extends V> list = selectList(statement, parameter, rowBounds);
+
     final DefaultMapResultHandler<K, V> mapResultHandler = new DefaultMapResultHandler<>(mapKey,
-            configuration.getObjectFactory(), configuration.getObjectWrapperFactory(), configuration.getReflectorFactory());
+      configuration.getObjectFactory(), configuration.getObjectWrapperFactory(), configuration.getReflectorFactory());
+
+    // step 2： 利用metaObject进行包装，mapKey是domain中的属性，就结果进行映射
     final DefaultResultContext<V> context = new DefaultResultContext<>();
     for (V o : list) {
       context.nextResultObject(o);
@@ -143,7 +143,9 @@ public class DefaultSqlSession implements SqlSession {
   @Override
   public <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds) {
     try {
+      //MappedStatement ：就是mapper的对象
       MappedStatement ms = configuration.getMappedStatement(statement);
+      //executor.query(ms, wrapCollection(parameter), rowBounds, handler);
       return executor.query(ms, wrapCollection(parameter), rowBounds, Executor.NO_RESULT_HANDLER);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
@@ -170,6 +172,7 @@ public class DefaultSqlSession implements SqlSession {
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
     } finally {
+      //threadLocal 避免oom
       ErrorContext.instance().reset();
     }
   }
@@ -193,6 +196,8 @@ public class DefaultSqlSession implements SqlSession {
   public int update(String statement, Object parameter) {
     try {
       dirty = true;
+      //核心：statementId取获取指定的标签，一个标签对应2个MappedStatement
+      //插入本质：更新
       MappedStatement ms = configuration.getMappedStatement(statement);
       return executor.update(ms, wrapCollection(parameter));
     } catch (Exception e) {
@@ -316,6 +321,7 @@ public class DefaultSqlSession implements SqlSession {
     return (!autoCommit && dirty) || force;
   }
 
+  //把参数包装成一个Map
   private Object wrapCollection(final Object object) {
     if (object instanceof Collection) {
       StrictMap<Object> map = new StrictMap<>();

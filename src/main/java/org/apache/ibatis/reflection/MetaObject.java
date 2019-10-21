@@ -15,17 +15,13 @@
  */
 package org.apache.ibatis.reflection;
 
+import org.apache.ibatis.reflection.factory.ObjectFactory;
+import org.apache.ibatis.reflection.property.PropertyTokenizer;
+import org.apache.ibatis.reflection.wrapper.*;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.ibatis.reflection.factory.ObjectFactory;
-import org.apache.ibatis.reflection.property.PropertyTokenizer;
-import org.apache.ibatis.reflection.wrapper.BeanWrapper;
-import org.apache.ibatis.reflection.wrapper.CollectionWrapper;
-import org.apache.ibatis.reflection.wrapper.MapWrapper;
-import org.apache.ibatis.reflection.wrapper.ObjectWrapper;
-import org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory;
 
 /**
  * @author Clinton Begin
@@ -48,11 +44,14 @@ public class MetaObject {
       this.objectWrapper = (ObjectWrapper) object;
     } else if (objectWrapperFactory.hasWrapperFor(object)) {
       this.objectWrapper = objectWrapperFactory.getWrapperFor(this, object);
+      //map
     } else if (object instanceof Map) {
       this.objectWrapper = new MapWrapper(this, (Map) object);
+      //collection
     } else if (object instanceof Collection) {
       this.objectWrapper = new CollectionWrapper(this, (Collection) object);
     } else {
+      //bean
       this.objectWrapper = new BeanWrapper(this, object);
     }
   }

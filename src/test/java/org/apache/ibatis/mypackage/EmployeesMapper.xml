@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="EmployeesMapper">
+  <!--<cache-ref namespace=""/>&lt;!&ndash;指定二级缓存&ndash;&gt;-->
+  <!--<cache type=""/>-->
+
+
+  <resultMap id="BaseResultMap" type="org.apache.ibatis.mypackage.Employee">
+    <id column="EMPLOYEE_ID" property="employeeId" jdbcType="DECIMAL"/>
+    <result column="FIRST_NAME" property="firstName" jdbcType="VARCHAR"/>
+    <result column="LAST_NAME" property="lastName" jdbcType="VARCHAR"/>
+    <result column="EMAIL" property="email" jdbcType="VARCHAR"/>
+    <result column="SALARY" property="salary" jdbcType="DECIMAL"/>
+  </resultMap>
+
+  <!--useCache="true" 开启语句级别的二级缓存-->
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" useCache="true">
+    select
+    	EMPLOYEE_ID, FIRST_NAME, LAST_NAME, EMAIL, SALARY
+    	from test.EMPLOYEES
+  </select>
+
+  <insert id="insert" parameterType="org.apache.ibatis.mypackage.Employee">
+    insert into test.EMPLOYEES(
+    EMPLOYEE_ID,
+    FIRST_NAME,
+    LAST_NAME,
+    EMAIL,
+    SALARY
+    ) values (
+    #{employeeId},
+    #{firstName},
+    #{lastName},
+    #{email},
+    #{salary}
+    )
+    <!--<selectKey resultType="long" keyProperty="id" order="AFTER">
+      select LAST_INSERT_ID()
+    </selectKey>-->
+  </insert>
+
+</mapper>
